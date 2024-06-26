@@ -1,0 +1,151 @@
+/* styles.css */
+
+body {
+    font-family: "Roboto", sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 1em 0;
+    text-align: center;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo {
+    height: 150px;
+    margin-right: 1em;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1em;
+}
+
+main {
+    padding: 2em;
+    display: flex;
+    justify-content: center;
+}
+
+.product-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2em;
+    justify-content: center;
+    width: 100%;
+}
+
+.product {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1em;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    background: #fff;
+    transition: transform 0.3s ease;
+}
+
+.product:hover {
+    transform: scale(1.05);
+}
+
+.product-thumbnail {
+    text-align: center;
+    margin-bottom: 1em;
+}
+
+.product-thumbnail img {
+    max-width: 100%;
+    border-radius: 8px;
+}
+
+.product-info {
+    text-align: center;
+}
+
+.product-info h2 {
+    margin: 0.5em 0;
+    font-size: 1.5em;
+}
+
+.product-info p {
+    font-size: 1em;
+    margin: 0.5em 0 1em;
+}
+
+model-viewer {
+    width: 100%;
+    height: 300px;
+    margin-top: 1em;
+    border-radius: 8px;
+    background: #f3f3f3;
+}
+
+.view-product-button {
+    margin-top: 1em;
+    background-color: #007BFF;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 1em;
+    color: #fff;
+    transition: background-color 0.3s ease;
+}
+
+.view-product-button a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.view-product-button:hover {
+    background-color: #0056b3;
+}
+
+/* Responsive Design */
+
+@media (max-width: 768px) {
+    main {
+        padding: 1em;
+    }
+    .product {
+        max-width: 100%;
+        margin: 1em 0;
+    }
+    model-viewer {
+        height: 250px;
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        padding: 0.5em 0;
+    }
+    .header-content {
+        flex-direction: column;
+    }
+    .logo {
+        margin-bottom: 0.5em;
+        margin-right: 0;
+    }
+    h1 {
+        font-size: 1.5em;
+    }
+    .product-info p {
+        font-size: 0.9em;
+    }
+    model-viewer {
+        height: 200px;
+    }
+}

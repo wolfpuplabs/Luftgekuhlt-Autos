@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luftgekühlt AR Web Catalog</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Include the <model-viewer> polyfill -->
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="logo.png" alt="Store Logo" class="logo">
+            <h1>AR Web Catalog</h1>
+        </div>
+    </header>
+    <main>
+        <div class="product-grid">
+            <!-- Product 1 -->
+            <section class="product">
+                <div class="product-thumbnail">
+                    <img src="product1-image.jpg" alt="Product 1 Image">
+                </div>
+                <div class="product-info">
+                    <h2>AR T-SHIRT</h2>
+                    <p>Luftgekühlt AR T-shirt. This product can be viewed in augmented reality.</p>
+                    <model-viewer src="product1.glb" ar ar-modes="webxr scene-viewer quick-look" environment-image="neutral" poster="product1-poster.jpg" alt="A 3D model of Product 1" shadow-intensity="1" camera-controls auto-rotate></model-viewer>
+                    <button class="view-product-button">
+                        <a href="https://www.tokopedia.com/stickar/augmented-reality-shirt?utm_source=google&utm_medium=organic&utm_campaign=pdp-seo" target="_blank">Shop</a>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Product 2 -->
+            <section class="product">
+                <div class="product-thumbnail">
+                    <img src="product2-image.jpg" alt="Product 2 Image">
+                </div>
+                <div class="product-info">
+                    <h2>AR STICKER</h2>
+                    <p>Luftgekühlt AR Sticker. This product can be viewed in augmented reality.</p>
+                    <model-viewer src="product2.glb" ar ar-modes="webxr scene-viewer quick-look" environment-image="neutral" poster="product2-poster.jpg" alt="A 3D model of Product 2" shadow-intensity="1" camera-controls auto-rotate></model-viewer>
+                    <button class="view-product-button">
+                        <a href="https://www.tokopedia.com/stickar/augmented-reality-sticker?utm_source=google&utm_medium=organic&utm_campaign=pdp-seo" target="_blank">Shop</a>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Product 3 -->
+            <section class="product">
+                <div class="product-thumbnail">
+                    <img src="product3-image.jpg" alt="Product 3 Image">
+                </div>
+                <div class="product-info">
+                    <h2>AR COSTER</h2>
+                    <p>Luftgekühlt AR Coster. This product can be viewed in augmented reality.</p>
+                    <model-viewer src="product3.glb" ar ar-modes="webxr scene-viewer quick-look" environment-image="neutral" poster="product3-poster.jpg" alt="A 3D model of Product 3" shadow-intensity="1" camera-controls auto-rotate></model-viewer>
+                    <button class="view-product-button">
+                        <a href="https://www.tokopedia.com/stickar/vintage-volkswagen-ar-coster-super-beetle-super-beetle-be0cb?utm_source=google&utm_medium=organic&utm_campaign=pdp-seo" target="_blank">Shop</a>
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2024 AR Web Catalog. All rights reserved by Wolfpuplabs.</p>
+    </footer>
+</body>
+</html>
