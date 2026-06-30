@@ -195,7 +195,16 @@
     --poster-color:transparent;border:1px solid var(--line-soft);
   }
   model-viewer::part(default-ar-button){display:none}
-  .ar-btn{position:absolute;right:14px;bottom:14px;display:inline-flex;align-items:center;gap:7px;
+  .media-stage{position:relative;width:100%;height:300px;border-radius:8px;overflow:hidden;border:1px solid var(--line-soft);background:radial-gradient(120% 90% at 50% 0%, #2a2418, #110e08)}
+  .media-stage .photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;transition:opacity .45s var(--ease)}
+  .media-stage model-viewer{position:absolute;inset:0;width:100%;height:100%;border:none;border-radius:0;background:transparent;z-index:1}
+  .mv-frame[data-mode="3d"] .photo{opacity:0;pointer-events:none}
+  .media-tabs{position:absolute;top:12px;left:12px;z-index:5;display:inline-flex;gap:2px;
+    background:rgba(20,17,11,.72);border:1px solid var(--line);border-radius:30px;padding:3px;backdrop-filter:blur(5px)}
+  .mtab{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ivory-dim);background:none;border:none;padding:6px 13px;border-radius:30px;cursor:pointer;transition:background .2s,color .2s}
+  .mtab.active{background:var(--ivory);color:var(--oil)}
+  .ar-btn{position:absolute;right:14px;bottom:14px;z-index:5;display:inline-flex;align-items:center;gap:7px;
     font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
     color:var(--oil);background:var(--amber);border:none;border-radius:30px;padding:8px 13px;cursor:pointer;
     box-shadow:0 6px 18px rgba(0,0,0,.45);transition:transform .2s var(--ease),background .2s,opacity .2s}
@@ -203,7 +212,7 @@
   .ar-btn:active{transform:translateY(0)}
   .ar-btn svg{display:block}
   .ar-btn.unsupported{background:rgba(236,227,206,.14);color:var(--ivory-dim);box-shadow:none}
-  .ar-tip{position:absolute;right:14px;bottom:54px;max-width:200px;
+  .ar-tip{position:absolute;right:14px;bottom:54px;z-index:6;max-width:200px;
     font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.04em;line-height:1.5;
     color:var(--ivory);background:rgba(20,17,11,.95);border:1px solid var(--line);border-radius:8px;
     padding:9px 11px;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .25s,transform .25s}
@@ -373,12 +382,19 @@ cardsEl.innerHTML = CARS.map(c=>`
     </div>
     <h3>${c.name}</h3>
     <p class="sub">${c.sub}</p>
-    <div class="mv-frame">
-      <model-viewer src="${c.glb}" poster="${c.poster}" alt="3D model of ${c.name}"
-        ar ar-modes="webxr scene-viewer quick-look" environment-image="neutral"
-        shadow-intensity="1" exposure="1.05" camera-controls auto-rotate
-        auto-rotate-delay="0" rotation-per-second="18deg" interaction-prompt="none"
-        loading="lazy" reveal="auto"></model-viewer>
+    <div class="mv-frame" data-mode="photo" data-usdz="${c.glb.replace('.glb','.usdz')}">
+      <div class="media-stage">
+        <img class="photo" src="${c.poster}" alt="${c.name} — photograph" loading="lazy">
+        <model-viewer src="${c.glb}" poster="${c.poster}" alt="3D model of ${c.name}"
+          ar ar-modes="webxr scene-viewer quick-look" environment-image="neutral"
+          shadow-intensity="1" exposure="1.05" camera-controls auto-rotate
+          auto-rotate-delay="0" rotation-per-second="18deg" interaction-prompt="none"
+          loading="lazy" reveal="auto"></model-viewer>
+      </div>
+      <div class="media-tabs" role="tablist">
+        <button class="mtab active" data-mode="photo" type="button">Photo</button>
+        <button class="mtab" data-mode="3d" type="button">3D</button>
+      </div>
       <button class="ar-btn" type="button" aria-label="View ${c.name} in augmented reality">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>
         View in AR
@@ -588,29 +604,55 @@ document.querySelectorAll('[data-rev], .btn, .startbtn').forEach(el=>{
 
 /* ---------- AR LAUNCH + SUPPORT DETECTION ---------- */
 const coarse = window.matchMedia('(pointer:coarse)').matches;
+// iPadOS Safari reports as desktop Mac, so also treat touch-capable "Mac" as Apple AR-capable
+const isApple = /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+
 function showTip(frame,msg){
   let tip=frame.querySelector('.ar-tip');
   if(!tip){ tip=document.createElement('div'); tip.className='ar-tip'; frame.appendChild(tip); }
   tip.textContent=msg; requestAnimationFrame(()=>tip.classList.add('show'));
   clearTimeout(tip._t); tip._t=setTimeout(()=>tip.classList.remove('show'),4200);
 }
+// launch iOS / iPadOS AR Quick Look directly from a usdz URL
+function quickLook(usdz){
+  const a=document.createElement('a');
+  a.setAttribute('rel','ar'); a.setAttribute('href', usdz);
+  const img=document.createElement('img'); a.appendChild(img); // Quick Look requires a child
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>a.remove(), 0);
+}
+
 document.querySelectorAll('.card .mv-frame').forEach(frame=>{
   const mv=frame.querySelector('model-viewer');
   const btn=frame.querySelector('.ar-btn');
-  const refresh=()=>btn.classList.toggle('unsupported', !mv.canActivateAR);
+  const usdz=frame.getAttribute('data-usdz');
+  const supported=()=> mv.canActivateAR || isApple;
+  const refresh=()=>btn.classList.toggle('unsupported', !supported());
   mv.addEventListener('load', refresh);
   mv.addEventListener('ar-status', e=>{ if(e.detail.status==='failed') showTip(frame,'AR session failed to start. Update your browser and try again.'); });
-  setTimeout(refresh, 1600);
+  setTimeout(refresh, 1600); refresh();
+
   btn.addEventListener('click', async ()=>{
     engine.tick(880,0.06,0.12);
     if(mv.canActivateAR){
-      try{ await mv.activateAR(); }
-      catch(err){ showTip(frame,'Could not open AR. Use the latest Chrome (Android) or Safari (iOS).'); }
-    }else{
-      showTip(frame, coarse
-        ? 'AR isn’t available in this browser. Try Chrome on Android or Safari on iOS.'
-        : 'Open this page on your phone, then tap View in AR to place the car in your room.');
+      try{ await mv.activateAR(); return; }catch(err){}
     }
+    if(isApple){ quickLook(usdz); return; }   // iPhone / iPad Quick Look
+    showTip(frame, coarse
+      ? 'AR isn’t available in this browser. Try Chrome on Android or Safari on iOS.'
+      : 'Open this page on your phone, then tap View in AR to place the car in your room.');
+  });
+
+  // ----- Photo / 3D toggle -----
+  frame.querySelectorAll('.mtab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      const mode=tab.dataset.mode;
+      frame.setAttribute('data-mode', mode);
+      frame.querySelectorAll('.mtab').forEach(t=>t.classList.toggle('active', t===tab));
+      engine.tick(560,0.04,0.07);
+    });
   });
 });
 
