@@ -194,7 +194,20 @@
     background:radial-gradient(120% 90% at 50% 0%, #2a2418, #110e08);
     --poster-color:transparent;border:1px solid var(--line-soft);
   }
-  .ar-hint{position:absolute;right:26px;bottom:0;transform:translateY(50%);font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.2em;color:var(--oil);background:var(--amber);padding:5px 10px;border-radius:30px;font-weight:700;pointer-events:none}
+  model-viewer::part(default-ar-button){display:none}
+  .ar-btn{position:absolute;right:14px;bottom:14px;display:inline-flex;align-items:center;gap:7px;
+    font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
+    color:var(--oil);background:var(--amber);border:none;border-radius:30px;padding:8px 13px;cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.45);transition:transform .2s var(--ease),background .2s,opacity .2s}
+  .ar-btn:hover{transform:translateY(-2px);background:#f0b751}
+  .ar-btn:active{transform:translateY(0)}
+  .ar-btn svg{display:block}
+  .ar-btn.unsupported{background:rgba(236,227,206,.14);color:var(--ivory-dim);box-shadow:none}
+  .ar-tip{position:absolute;right:14px;bottom:54px;max-width:200px;
+    font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.04em;line-height:1.5;
+    color:var(--ivory);background:rgba(20,17,11,.95);border:1px solid var(--line);border-radius:8px;
+    padding:9px 11px;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .25s,transform .25s}
+  .ar-tip.show{opacity:1;transform:translateY(0)}
   .mv-frame{position:relative}
 
   .specs{list-style:none;margin:16px 0 0;padding:14px 0 0;border-top:1px solid var(--line);
@@ -361,12 +374,15 @@ cardsEl.innerHTML = CARS.map(c=>`
     <h3>${c.name}</h3>
     <p class="sub">${c.sub}</p>
     <div class="mv-frame">
-      <model-viewer src="${c.glb}" poster="${c.poster}" alt="3D model of ${c.name}"
+      <model-viewer src="${c.glb}" ios-src="${c.glb.replace('.glb','.usdz')}" poster="${c.poster}" alt="3D model of ${c.name}"
         ar ar-modes="webxr scene-viewer quick-look" environment-image="neutral"
         shadow-intensity="1" exposure="1.05" camera-controls auto-rotate
         auto-rotate-delay="0" rotation-per-second="18deg" interaction-prompt="none"
         loading="lazy" reveal="auto"></model-viewer>
-      <span class="ar-hint">DRAG / TAP-AR</span>
+      <button class="ar-btn" type="button" aria-label="View ${c.name} in augmented reality">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>
+        View in AR
+      </button>
     </div>
     <ul class="specs">
       ${c.specs.map(s=>`<li><span class="k">${s[0]}</span><span class="v">${s[1]}</span></li>`).join('')}
@@ -568,6 +584,34 @@ document.querySelectorAll('[data-tilt]').forEach(card=>{
 });
 document.querySelectorAll('[data-rev], .btn, .startbtn').forEach(el=>{
   el.addEventListener('pointerenter',()=>engine.tick(720,0.04,0.07));
+});
+
+/* ---------- AR LAUNCH + SUPPORT DETECTION ---------- */
+const coarse = window.matchMedia('(pointer:coarse)').matches;
+function showTip(frame,msg){
+  let tip=frame.querySelector('.ar-tip');
+  if(!tip){ tip=document.createElement('div'); tip.className='ar-tip'; frame.appendChild(tip); }
+  tip.textContent=msg; requestAnimationFrame(()=>tip.classList.add('show'));
+  clearTimeout(tip._t); tip._t=setTimeout(()=>tip.classList.remove('show'),4200);
+}
+document.querySelectorAll('.card .mv-frame').forEach(frame=>{
+  const mv=frame.querySelector('model-viewer');
+  const btn=frame.querySelector('.ar-btn');
+  const refresh=()=>btn.classList.toggle('unsupported', !mv.canActivateAR);
+  mv.addEventListener('load', refresh);
+  mv.addEventListener('ar-status', e=>{ if(e.detail.status==='failed') showTip(frame,'AR session failed to start. Update your browser and try again.'); });
+  setTimeout(refresh, 1600);
+  btn.addEventListener('click', async ()=>{
+    engine.tick(880,0.06,0.12);
+    if(mv.canActivateAR){
+      try{ await mv.activateAR(); }
+      catch(err){ showTip(frame,'Could not open AR. Use the latest Chrome (Android) or Safari (iOS).'); }
+    }else{
+      showTip(frame, coarse
+        ? 'AR isn’t available in this browser. Try Chrome on Android or Safari on iOS.'
+        : 'Open this page on your phone, then tap View in AR to place the car in your room.');
+    }
+  });
 });
 
 /* ---------- SCROLL REVEAL ---------- */
