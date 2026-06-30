@@ -196,7 +196,7 @@
   }
   model-viewer::part(default-ar-button){display:none}
   .media-stage{position:relative;width:100%;height:300px;border-radius:8px;overflow:hidden;border:1px solid var(--line-soft);background:radial-gradient(120% 90% at 50% 0%, #2a2418, #110e08)}
-  .media-stage .photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;transition:opacity .45s var(--ease)}
+  .media-stage .photo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:10px;z-index:2;transition:opacity .45s var(--ease)}
   .media-stage model-viewer{position:absolute;inset:0;width:100%;height:100%;border:none;border-radius:0;background:transparent;z-index:1}
   .mv-frame[data-mode="3d"] .photo{opacity:0;pointer-events:none}
   .media-tabs{position:absolute;top:12px;left:12px;z-index:5;display:inline-flex;gap:2px;
@@ -382,7 +382,7 @@ cardsEl.innerHTML = CARS.map(c=>`
     </div>
     <h3>${c.name}</h3>
     <p class="sub">${c.sub}</p>
-    <div class="mv-frame" data-mode="photo" data-usdz="${c.glb.replace('.glb','.usdz')}">
+    <div class="mv-frame" data-mode="photo">
       <div class="media-stage">
         <img class="photo" src="${c.poster}" alt="${c.name} — photograph" loading="lazy">
         <model-viewer src="${c.glb}" poster="${c.poster}" alt="3D model of ${c.name}"
@@ -602,62 +602,25 @@ document.querySelectorAll('[data-rev], .btn, .startbtn').forEach(el=>{
   el.addEventListener('pointerenter',()=>engine.tick(720,0.04,0.07));
 });
 
-/* ---------- AR LAUNCH + SUPPORT DETECTION ---------- */
-const coarse = window.matchMedia('(pointer:coarse)').matches;
-// iPadOS Safari reports as desktop Mac, so also treat touch-capable "Mac" as Apple AR-capable
-const isApple = /iPad|iPhone|iPod/.test(navigator.userAgent)
-  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-  || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-
+/* ---------- AR LAUNCH (glb only — model-viewer auto-generates USDZ on iOS) ---------- */
 function showTip(frame,msg){
   let tip=frame.querySelector('.ar-tip');
   if(!tip){ tip=document.createElement('div'); tip.className='ar-tip'; frame.appendChild(tip); }
   tip.textContent=msg; requestAnimationFrame(()=>tip.classList.add('show'));
   clearTimeout(tip._t); tip._t=setTimeout(()=>tip.classList.remove('show'),4200);
 }
-// launch iOS / iPadOS AR Quick Look directly from a usdz URL
-function quickLook(usdz){
-  const a=document.createElement('a');
-  a.setAttribute('rel','ar'); a.setAttribute('href', usdz);
-  const img=document.createElement('img'); a.appendChild(img); // Quick Look requires a child
-  document.body.appendChild(a); a.click();
-  setTimeout(()=>a.remove(), 0);
-}
-
 document.querySelectorAll('.card .mv-frame').forEach(frame=>{
   const mv=frame.querySelector('model-viewer');
   const btn=frame.querySelector('.ar-btn');
-  const usdz=frame.getAttribute('data-usdz');
-  // preflight: confirm the .usdz is actually deployed, so a missing file
-  // shows a friendly message instead of a raw 404 page. Optimistic by default.
-  frame._usdzOk = undefined;
-  if(isApple && usdz){
-    fetch(usdz,{method:'HEAD'})
-      .then(r=>{ frame._usdzOk = r.ok; })
-      .catch(()=>{ frame._usdzOk = false; });
-  }
-  const supported=()=> mv.canActivateAR || isApple;
-  const refresh=()=>btn.classList.toggle('unsupported', !supported());
-  mv.addEventListener('load', refresh);
-  mv.addEventListener('ar-status', e=>{ if(e.detail.status==='failed') showTip(frame,'AR session failed to start. Update your browser and try again.'); });
-  setTimeout(refresh, 1600); refresh();
-
   btn.addEventListener('click', async ()=>{
     engine.tick(880,0.06,0.12);
-    if(mv.canActivateAR){
-      try{ await mv.activateAR(); return; }catch(err){}
+    try{
+      // iOS/iPadOS: builds a USDZ from the glb and opens Quick Look.
+      // Android: opens Scene Viewer / WebXR. No separate .usdz file needed.
+      await mv.activateAR();
+    }catch(err){
+      showTip(frame,'AR needs a phone or tablet — on iPhone/iPad use Safari, on Android use Chrome.');
     }
-    if(isApple){
-      if(frame._usdzOk===false){
-        showTip(frame,'AR model isn’t deployed yet. Upload the .usdz files to the site, then try again.');
-      }else{
-        quickLook(usdz);   // iPhone / iPad Quick Look
-      }
-      return;
-    }
-    showTip(frame, coarse
-      ? 'AR isn’t available in this browser. Try Chrome on Android or Safari on iOS.'
-      : 'Open this page on your phone, then tap View in AR to place the car in your room.');
   });
 
   // ----- Photo / 3D toggle -----
