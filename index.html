@@ -374,7 +374,7 @@ cardsEl.innerHTML = CARS.map(c=>`
     <h3>${c.name}</h3>
     <p class="sub">${c.sub}</p>
     <div class="mv-frame">
-      <model-viewer src="${c.glb}" ios-src="${c.glb.replace('.glb','.usdz')}" poster="${c.poster}" alt="3D model of ${c.name}"
+      <model-viewer src="${c.glb}" poster="${c.poster}" alt="3D model of ${c.name}"
         ar ar-modes="webxr scene-viewer quick-look" environment-image="neutral"
         shadow-intensity="1" exposure="1.05" camera-controls auto-rotate
         auto-rotate-delay="0" rotation-per-second="18deg" interaction-prompt="none"
