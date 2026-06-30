@@ -1,98 +1,582 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luftgekühlt Autos</title>
-    <link rel="stylesheet" href="styles.css">
-    <!-- Include the <model-viewer> polyfill -->
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Luftgekühlt Autos — Air-Cooled Icons</title>
+<meta name="description" content="A small collection of air-cooled icons. Walk around each car in 3D, or place it in your room with AR." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Expanded:wght@500;600;700;800&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
+<style>
+  :root{
+    --oil:#15120b;
+    --oil-2:#1d180f;
+    --oil-3:#241e13;
+    --ivory:#ece3ce;
+    --ivory-dim:#b7ad92;
+    --green:#2c5e3f;
+    --green-bright:#46a06a;
+    --amber:#e0a33c;
+    --red:#bb3a2c;
+    --line:rgba(236,227,206,.14);
+    --line-soft:rgba(236,227,206,.07);
+    --maxw:1240px;
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--oil);
+    color:var(--ivory);
+    font-family:"Archivo",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 7px),
+      radial-gradient(120% 80% at 50% -10%, rgba(224,163,60,.10), transparent 60%),
+      radial-gradient(100% 90% at 80% 110%, rgba(44,94,63,.16), transparent 55%);
+    opacity:.9;
+  }
+  a{color:inherit}
+  ::selection{background:var(--amber);color:var(--oil)}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .mono{font-family:"JetBrains Mono",monospace}
+  .eyebrow{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.42em;text-transform:uppercase;
+    color:var(--amber);
+  }
+
+  /* ---------------- IGNITION OVERLAY ---------------- */
+  #ignition{
+    position:fixed;inset:0;z-index:90;
+    background:radial-gradient(120% 120% at 50% 40%, var(--oil-2), var(--oil) 70%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:34px;text-align:center;padding:24px;
+    transition:opacity .9s var(--ease), visibility .9s;
+  }
+  #ignition.gone{opacity:0;visibility:hidden}
+  #ignition .ig-label{max-width:30ch;color:var(--ivory-dim);font-size:14px;line-height:1.6}
+  #ignition .marque{
+    font-family:"Anton",sans-serif;letter-spacing:.06em;
+    font-size:clamp(34px,8vw,86px);line-height:.92;color:var(--ivory);
+    text-shadow:0 2px 0 rgba(0,0,0,.5);
+  }
+  #ignition .marque span{color:var(--green-bright)}
+
+  .startbtn{
+    --d:138px;
+    width:var(--d);height:var(--d);border-radius:50%;
+    border:2px solid var(--red);background:
+      radial-gradient(circle at 50% 38%, #2a221a, #120f09 72%);
+    color:var(--ivory);cursor:pointer;position:relative;
+    font-family:"Archivo Expanded",sans-serif;font-weight:700;
+    letter-spacing:.18em;font-size:13px;text-transform:uppercase;
+    box-shadow:0 0 0 8px rgba(187,58,44,.08), 0 18px 50px rgba(0,0,0,.55);
+    transition:transform .25s var(--ease), box-shadow .4s var(--ease);
+    animation:breathe 2.4s ease-in-out infinite;
+  }
+  .startbtn small{display:block;color:var(--amber);font-size:10px;letter-spacing:.3em;margin-top:6px}
+  .startbtn:hover{transform:scale(1.05);box-shadow:0 0 0 10px rgba(187,58,44,.14), 0 22px 60px rgba(0,0,0,.6)}
+  .startbtn:active{transform:scale(.96)}
+  @keyframes breathe{0%,100%{box-shadow:0 0 0 8px rgba(187,58,44,.08),0 18px 50px rgba(0,0,0,.55)}50%{box-shadow:0 0 0 14px rgba(187,58,44,.02),0 18px 50px rgba(0,0,0,.55)}}
+
+  /* ---------------- NAV ---------------- */
+  header.nav{
+    position:fixed;top:0;left:0;right:0;z-index:70;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 24px;
+    background:linear-gradient(180deg, rgba(21,18,11,.92), rgba(21,18,11,0));
+    backdrop-filter:blur(6px);
+    transform:translateY(-100%);transition:transform .7s var(--ease);
+  }
+  header.nav.show{transform:translateY(0)}
+  .brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+  .brand img{height:38px;width:auto;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+  .brand b{font-family:"Archivo Expanded",sans-serif;font-weight:800;letter-spacing:.14em;font-size:14px}
+  .navlinks{display:flex;align-items:center;gap:26px}
+  .navlinks a{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ivory-dim);text-decoration:none;transition:color .2s}
+  .navlinks a:hover{color:var(--ivory)}
+  .sound-toggle{
+    display:flex;align-items:center;gap:8px;cursor:pointer;
+    border:1px solid var(--line);border-radius:40px;padding:7px 13px;
+    font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;
+    color:var(--ivory-dim);background:rgba(0,0,0,.25);transition:border-color .25s,color .25s}
+  .sound-toggle:hover{border-color:var(--amber);color:var(--ivory)}
+  .sound-toggle .dot{width:8px;height:8px;border-radius:50%;background:var(--ivory-dim);transition:background .25s, box-shadow .25s}
+  .sound-toggle.on .dot{background:var(--green-bright);box-shadow:0 0 10px var(--green-bright)}
+  @media(max-width:720px){.navlinks a{display:none}}
+
+  /* ---------------- HERO ---------------- */
+  .hero{position:relative;z-index:1;min-height:100svh;display:flex;align-items:center;padding:120px 0 70px}
+  .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;width:100%}
+  @media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:34px}}
+
+  .hero h1{
+    font-family:"Anton",sans-serif;font-weight:400;
+    font-size:clamp(56px,12vw,150px);line-height:.86;margin:18px 0 0;
+    letter-spacing:.01em;color:var(--ivory);
+    text-shadow:0 3px 0 rgba(0,0,0,.45);
+  }
+  .hero h1 .cool{color:var(--green-bright)}
+  .hero h1 .small{display:block;font-size:.34em;letter-spacing:.4em;color:var(--ivory-dim);margin-top:14px}
+  .hero p.lead{max-width:46ch;color:var(--ivory-dim);font-size:17px;line-height:1.7;margin:26px 0 0}
+  .hero-cta{margin-top:30px;display:flex;gap:14px;flex-wrap:wrap}
+  .btn{
+    font-family:"Archivo Expanded",sans-serif;font-weight:700;letter-spacing:.12em;
+    text-transform:uppercase;font-size:12px;text-decoration:none;cursor:pointer;
+    padding:14px 22px;border-radius:4px;border:1px solid var(--line);
+    transition:transform .25s var(--ease), background .25s, color .25s, border-color .25s}
+  .btn:active{transform:translateY(1px)}
+  .btn.solid{background:var(--green);border-color:var(--green);color:var(--ivory)}
+  .btn.solid:hover{background:var(--green-bright);border-color:var(--green-bright)}
+  .btn.ghost{color:var(--ivory)}
+  .btn.ghost:hover{border-color:var(--amber);color:var(--amber)}
+
+  .tach-wrap{display:flex;justify-content:center;perspective:900px}
+  .tach{width:min(380px,82vw);aspect-ratio:1;position:relative;transform-style:preserve-3d;transition:transform .15s ease-out}
+  .tach svg{width:100%;height:100%;display:block;filter:drop-shadow(0 24px 60px rgba(0,0,0,.55))}
+  .tach .readout{
+    position:absolute;left:50%;bottom:24%;transform:translateX(-50%);
+    text-align:center;pointer-events:none}
+  .tach .rpm{font-family:"Anton",sans-serif;font-size:40px;color:var(--ivory);line-height:1}
+  .tach .rpm small{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.3em;color:var(--amber);display:block;margin-top:4px}
+
+  .scrollcue{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ivory-dim);font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.3em}
+  .scrollcue .bar{width:1px;height:38px;background:linear-gradient(var(--amber),transparent);animation:drop 1.8s ease-in-out infinite}
+  @keyframes drop{0%{transform:scaleY(0);transform-origin:top}45%{transform:scaleY(1);transform-origin:top}55%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+  /* ---------------- COLLECTION ---------------- */
+  .section-head{position:relative;z-index:1;padding:40px 0 8px;display:flex;align-items:end;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:48px}
+  .section-head h2{font-family:"Archivo Expanded",sans-serif;font-weight:800;font-size:clamp(26px,4vw,42px);margin:8px 0 0;letter-spacing:.02em}
+  .section-head .count{font-family:"JetBrains Mono",monospace;color:var(--ivory-dim);font-size:13px;letter-spacing:.16em}
+
+  .collection{position:relative;z-index:1;display:grid;grid-template-columns:repeat(2,1fr);gap:30px;padding-bottom:60px}
+  @media(max-width:820px){.collection{grid-template-columns:1fr}}
+
+  .card{
+    position:relative;border:1px solid var(--line);border-radius:10px;
+    background:linear-gradient(180deg, var(--oil-2), var(--oil));
+    padding:18px;overflow:hidden;transform-style:preserve-3d;
+    transition:transform .3s var(--ease), border-color .35s, box-shadow .35s;
+    opacity:0;translate:0 40px;
+  }
+  .card.in{opacity:1;translate:0 0}
+  .card:hover{border-color:rgba(224,163,60,.4);box-shadow:0 30px 70px rgba(0,0,0,.5)}
+  .card .glow{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s;
+    background:radial-gradient(220px 220px at var(--mx,50%) var(--my,30%), rgba(224,163,60,.16), transparent 70%)}
+  .card:hover .glow{opacity:1}
+
+  .card-top{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .lot{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.28em;color:var(--amber)}
+  .status{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;padding:6px 11px;border-radius:40px;border:1px solid var(--line)}
+  .status.sold{color:var(--red);border-color:rgba(187,58,44,.5)}
+  .status.booked{color:var(--amber);border-color:rgba(224,163,60,.5)}
+  .status.available{color:var(--green-bright);border-color:rgba(70,160,106,.5)}
+
+  .card h3{font-family:"Archivo Expanded",sans-serif;font-weight:700;font-size:24px;margin:0 0 4px;letter-spacing:.01em}
+  .card .sub{color:var(--ivory-dim);font-size:14px;line-height:1.6;margin:0 0 16px}
+
+  model-viewer{
+    width:100%;height:300px;border-radius:8px;
+    background:radial-gradient(120% 90% at 50% 0%, #2a2418, #110e08);
+    --poster-color:transparent;border:1px solid var(--line-soft);
+  }
+  .ar-hint{position:absolute;right:26px;bottom:0;transform:translateY(50%);font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.2em;color:var(--oil);background:var(--amber);padding:5px 10px;border-radius:30px;font-weight:700;pointer-events:none}
+  .mv-frame{position:relative}
+
+  .specs{list-style:none;margin:16px 0 0;padding:14px 0 0;border-top:1px solid var(--line);
+    display:grid;grid-template-columns:repeat(2,1fr);gap:10px 18px}
+  .specs li{display:flex;flex-direction:column;gap:2px}
+  .specs .k{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ivory-dim)}
+  .specs .v{font-family:"Archivo",sans-serif;font-weight:600;font-size:14px;color:var(--ivory)}
+
+  .card-foot{margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .cta{font-family:"Archivo Expanded",sans-serif;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:12px;text-decoration:none;
+    padding:12px 18px;border-radius:4px;background:var(--ivory);color:var(--oil);transition:transform .25s var(--ease),background .25s}
+  .cta:hover{background:var(--amber);transform:translateY(-2px)}
+  .cta.wa{background:var(--green);color:var(--ivory)}
+  .cta.wa:hover{background:var(--green-bright)}
+  .card-foot .note{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ivory-dim);letter-spacing:.1em;text-align:right}
+
+  /* ---------------- FOOTER ---------------- */
+  footer{position:relative;z-index:1;border-top:1px solid var(--line);margin-top:30px;padding:46px 0 60px}
+  .foot-grid{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+  .foot-grid .marque{font-family:"Anton",sans-serif;font-size:40px;letter-spacing:.04em;color:var(--ivory)}
+  .foot-grid .marque span{color:var(--green-bright)}
+  footer small{font-family:"JetBrains Mono",monospace;color:var(--ivory-dim);font-size:11px;letter-spacing:.12em;line-height:1.9;display:block}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+    .card{opacity:1;translate:0 0}
+  }
+</style>
 </head>
 <body>
-    <header>
-        <div class="header-content">
-            <img src="logo.png" alt="Store Logo" class="logo">
-            <h1>LUFTGEKÜHLT AUTOS</h1>
+
+<!-- ===== IGNITION ===== -->
+<div id="ignition">
+  <p class="eyebrow">Air-cooled icons · est. workshop</p>
+  <div class="marque">LUFT<span>GEKÜHLT</span></div>
+  <p class="ig-label">Turn the key. The cluster runs its self-test, the flat-six settles into idle, and the collection opens.</p>
+  <button class="startbtn" id="startBtn" aria-label="Start engine and enter site">
+    Start<small>ENGINE</small>
+  </button>
+  <p class="eyebrow" style="color:var(--ivory-dim);opacity:.7">Sound on · tap to begin</p>
+</div>
+
+<!-- ===== NAV ===== -->
+<header class="nav" id="nav">
+  <a class="brand" href="#top"><img src="logo.png" alt="Luftgekühlt Autos logo"><b>LUFTGEKÜHLT</b></a>
+  <nav class="navlinks">
+    <a href="#collection">Collection</a>
+    <a href="#collection">View in AR</a>
+    <a href="https://wa.me/628112274426" target="_blank" rel="noopener">Contact</a>
+  </nav>
+  <div class="sound-toggle on" id="soundToggle" role="button" tabindex="0" aria-label="Toggle engine sound">
+    <span class="dot"></span><span id="soundLabel">IDLE ON</span>
+  </div>
+</header>
+
+<!-- ===== HERO ===== -->
+<main id="top">
+<section class="hero wrap">
+  <div class="hero-grid">
+    <div>
+      <p class="eyebrow">A small collection · viewable in 3D &amp; AR</p>
+      <h1>AIR<span class="cool">-COOLED</span><span class="small">ICONS, KEPT RUNNING</span></h1>
+      <p class="lead">Four cars worth slowing down for. Walk around each one in your browser, then place it in your own driveway with augmented reality before you ever pick up the phone.</p>
+      <div class="hero-cta">
+        <a class="btn solid" href="#collection">Browse the collection</a>
+        <a class="btn ghost" href="https://wa.me/628112274426" target="_blank" rel="noopener">Talk to the garage</a>
+      </div>
+    </div>
+
+    <div class="tach-wrap">
+      <div class="tach" id="tach">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <defs>
+            <radialGradient id="face" cx="50%" cy="42%" r="70%">
+              <stop offset="0%" stop-color="#2c2519"/>
+              <stop offset="100%" stop-color="#0e0b06"/>
+            </radialGradient>
+          </defs>
+          <circle cx="100" cy="100" r="96" fill="url(#face)" stroke="#3a3122" stroke-width="2"/>
+          <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(236,227,206,.08)" stroke-width="1"/>
+          <g id="ticks" stroke="var(--ivory-dim)"></g>
+          <path id="redarc" fill="none" stroke="var(--red)" stroke-width="6" stroke-linecap="round"/>
+          <g id="needleGroup" transform="rotate(-120 100 100)">
+            <line x1="100" y1="100" x2="100" y2="26" stroke="var(--amber)" stroke-width="3.4" stroke-linecap="round"/>
+            <circle cx="100" cy="100" r="8" fill="#1a150d" stroke="var(--amber)" stroke-width="2"/>
+          </g>
+        </svg>
+        <div class="readout">
+          <div class="rpm"><span id="rpmNum">0</span></div>
+          <div class="rpm"><small>RPM × 1000</small></div>
         </div>
-    </header>
-    <main>
-        <div class="product-grid">
-            <!-- Product 1 -->
-            <section class="product">
-                <div class="product-thumbnail">
-                    <img src="product1-image.jpg" alt="Product 1 Image">
-                </div>
-                <div class="product-info">
-                    <h2>Porsche 356B</h2>
-                    <p>Timeless Elegance: This classic coupe is the epitome of vintage style and engineering excellence.
-Year of Manufacture: Estimated between 1955 and 1965 (based on the visual cues such as the headlights and bumper design).
-Body Style: Coupe.
-Engine: Likely an air-cooled flat-four engine, with various displacement options across different models (typically ranging from 1.3L to 2.0L).
-Transmission: Manual transmission, commonly with 4-speed gearbox.
-This product can be viewed in augmented reality.</p>
-                    <model-viewer src="product1.glb" ar ar-modes="webxr scene-viewer quick-look" environment-image="neutral" poster="product1-poster.jpg" alt="A 3D model of Product 1" shadow-intensity="1" camera-controls auto-rotate></model-viewer>
-                    <button class="view-product-button">
-                        <a href="https://luftgekuhlt-autos.vercel.app" target="_blank">Sold</a>
-                    </button>
-                </div>
-            </section>
+      </div>
+    </div>
+  </div>
 
-            <!-- Product 2 -->
-            <section class="product">
-                <div class="product-thumbnail">
-                    <img src="product2-image.jpg" alt="Product 2 Image">
-                </div>
-                <div class="product-info">
-                    <h2>1970 Porsche 911E</h2>
-                    <p> Timeless Performance. Experience the allure of this classic 1970 Porsche 911E, a masterpiece of German engineering. With its sleek dark green finish, this beauty features:
+  <div class="scrollcue"><span>SCROLL</span><span class="bar"></span></div>
+</section>
 
-Engine: 2.2L air-cooled flat-six, delivering a robust 155 horsepower.
-Transmission: Smooth 5-speed manual gearbox for an engaging drive.
-Performance: Exceptional handling and acceleration, embodying the spirit of the 911 legacy.
-Design: Iconic body lines with chrome accents and classic Fuchs wheels.
-Interior: Luxurious, driver-focused cabin with pristine leather and classic instrumentation.
+<!-- ===== COLLECTION ===== -->
+<section class="wrap" id="collection">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">The catalogue</p>
+      <h2>Four for the keeping</h2>
+    </div>
+    <span class="count">[ 04 LOTS ]</span>
+  </div>
 
-Own a piece of Porsche history that promises both an exhilarating drive and an appreciating asset. This 911E isn’t just a car; it’s a timeless icon. This product can be viewed in augmented reality.</p>
-                    <model-viewer src="product2.glb" ar ar-modes="webxr scene-viewer quick-look" environment-image="neutral" poster="product2-poster.jpg" alt="A 3D model of Product 2" shadow-intensity="1" camera-controls auto-rotate></model-viewer>
-                    <button class="view-product-button">
-                        <a href="https://luftgekuhlt-autos.vercel.app" target="_blank">Sold</a>
-                    </button>
-                </div>
-            </section>
+  <div class="collection" id="cards"></div>
+</section>
+</main>
 
-            <!-- Product 3 -->
-            <section class="product">
-                <div class="product-thumbnail">
-                    <img src="product3-image.jpg" alt="Product 3 Image">
-                </div>
-                <div class="product-info">
-                    <h2>1976 GOLF MK1 GTI</h2>
-                    <p>The 1976 Golf GTI is more than just a car; it’s a driving legend. With its peppy engine, agile handling, and classic good looks, it’s perfect for enthusiasts and collectors alike. This GTI offers the perfect blend of everyday usability and weekend fun.. This product can be viewed in augmented reality.</p>
-                    <model-viewer src="product3.glb" ar ar-modes="webxr scene-viewer quick-look" environment-image="neutral" poster="product3-poster.jpg" alt="A 3D model of Product 3" shadow-intensity="1" camera-controls auto-rotate></model-viewer>
-                    <button class="view-product-button">
-                        <a href="https://luftgekuhlt-autos.vercel.app" target="_blank">Booked</a>
-                    </button>
-                </div>
-            </section>
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="wrap foot-grid">
+    <div class="marque">LUFT<span>GEKÜHLT</span></div>
+    <small>
+      Air-cooled web catalogue · 3D &amp; AR by model-viewer<br>
+      © 2024 Wolfpuplabs · Custom builds by Yumos Garage, Indonesia
+    </small>
+  </div>
+</footer>
 
-             <!-- Product4 -->
-            <section class="product">
-                <div class="product-thumbnail">
-                    <img src="product4-image.jpg" alt="Product 4 Image">
-                </div>
-                <div class="product-info">
-                    <h2>1963 Porsche 356C Wagon Replica</h2>
-                    <p>Passionately handcrafted by Yumos Garage, a renowned Indonesian workshop known for their exceptional craftsmanship, this custom build is truly one of a kind. This product can be viewed in augmented reality.</p>
-                    <model-viewer src="product4.glb" ar ar-modes="webxr scene-viewer quick-look" environment-image="neutral" poster="product4-poster.jpg" alt="A 3D model of Product 4" shadow-intensity="1" camera-controls auto-rotate></model-viewer>
-                    <button class="view-product-button">
-                        <a href="https://wa.me/628112274426" target="_blank">Contact</a>
-                    </button>
-                </div>
-            </section>
-        </div>
-    </main>
-    <footer>
-        <p>&copy; 2024 AR Web Catalog. All rights reserved by Wolfpuplabs.</p>
-    </footer>
+<script>
+const CARS = [
+  {
+    lot:"LOT 01", status:"sold", statusLabel:"Sold",
+    name:"Porsche 356B", sub:"Vintage coupé, all the right curves — a benchmark for everything that came after.",
+    glb:"product1.glb", poster:"product1-image.jpg",
+    specs:[["Year","1955–1965"],["Layout","Coupé"],["Engine","Flat-4, air-cooled"],["Displacement","1.3–2.0 L"],["Gearbox","4-speed manual"],["Drive","Rear-engine, RWD"]],
+    cta:{label:"Open gallery", href:"https://luftgekuhlt-autos.vercel.app", wa:false}, note:"No longer available"
+  },
+  {
+    lot:"LOT 02", status:"sold", statusLabel:"Sold",
+    name:"1970 Porsche 911E", sub:"Dark green, chrome accents, Fuchs wheels. The 911 at its most honest.",
+    glb:"product2.glb", poster:"product2-image.jpg",
+    specs:[["Year","1970"],["Engine","Flat-6, air-cooled"],["Displacement","2.2 L"],["Output","155 hp"],["Gearbox","5-speed manual"],["Wheels","Fuchs"]],
+    cta:{label:"Open gallery", href:"https://luftgekuhlt-autos.vercel.app", wa:false}, note:"No longer available"
+  },
+  {
+    lot:"LOT 03", status:"booked", statusLabel:"Booked",
+    name:"1976 Golf MK1 GTI", sub:"The original hot hatch. Peppy, agile, and endlessly usable — collector fun for every day.",
+    glb:"product3.glb", poster:"product3-image.jpg",
+    specs:[["Year","1976"],["Type","Hot hatch"],["Engine","Inline-4"],["Character","Light &amp; agile"],["Gearbox","Manual"],["Status","Reserved"]],
+    cta:{label:"Open gallery", href:"https://luftgekuhlt-autos.vercel.app", wa:false}, note:"Reserved — ask for next"
+  },
+  {
+    lot:"LOT 04", status:"available", statusLabel:"Enquire",
+    name:"1963 Porsche 356C Wagon", sub:"A one-off wagon replica, handcrafted by Yumos Garage. Nothing else like it on the road.",
+    glb:"product4.glb", poster:"product4-image.jpg",
+    specs:[["Year","1963 (style)"],["Build","Yumos Garage"],["Type","Custom wagon replica"],["Run","One-off"],["Body","Handcrafted"],["Avail.","Open to offers"]],
+    cta:{label:"Enquire on WhatsApp", href:"https://wa.me/628112274426", wa:true}, note:"Available now"
+  }
+];
+
+const cardsEl = document.getElementById('cards');
+cardsEl.innerHTML = CARS.map(c=>`
+  <article class="card" data-tilt>
+    <span class="glow"></span>
+    <div class="card-top">
+      <span class="lot">${c.lot}</span>
+      <span class="status ${c.status}">${c.statusLabel}</span>
+    </div>
+    <h3>${c.name}</h3>
+    <p class="sub">${c.sub}</p>
+    <div class="mv-frame">
+      <model-viewer src="${c.glb}" poster="${c.poster}" alt="3D model of ${c.name}"
+        ar ar-modes="webxr scene-viewer quick-look" environment-image="neutral"
+        shadow-intensity="1" exposure="1.05" camera-controls auto-rotate
+        auto-rotate-delay="0" rotation-per-second="18deg" interaction-prompt="none"
+        loading="lazy" reveal="auto"></model-viewer>
+      <span class="ar-hint">DRAG / TAP-AR</span>
+    </div>
+    <ul class="specs">
+      ${c.specs.map(s=>`<li><span class="k">${s[0]}</span><span class="v">${s[1]}</span></li>`).join('')}
+    </ul>
+    <div class="card-foot">
+      <a class="cta ${c.cta.wa?'wa':''}" href="${c.cta.href}" target="_blank" rel="noopener" data-rev>${c.cta.label}</a>
+      <span class="note">${c.note}</span>
+    </div>
+  </article>
+`).join('');
+
+/* ---------- WEB-AUDIO ENGINE ---------- */
+class Engine{
+  constructor(){ this.ctx=null; this.idleOn=false; this.nodes=null; this.idleWanted=true; }
+  ensure(){
+    if(this.ctx) return;
+    const AC = window.AudioContext||window.webkitAudioContext;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0.0;
+    this.master.connect(this.ctx.destination);
+  }
+  noiseBuf(){
+    if(this._nb) return this._nb;
+    const n=this.ctx.sampleRate*2, b=this.ctx.createBuffer(1,n,this.ctx.sampleRate), d=b.getChannelData(0);
+    let last=0;
+    for(let i=0;i<n;i++){const w=Math.random()*2-1; last=(last+0.02*w)/1.02; d[i]=last*3.2;}
+    this._nb=b; return b;
+  }
+  crank(then){
+    this.ensure();
+    if(this.ctx.state==='suspended') this.ctx.resume();
+    const t=this.ctx.currentTime;
+    const src=this.ctx.createBufferSource(); src.buffer=this.noiseBuf(); src.loop=true;
+    const bp=this.ctx.createBiquadFilter(); bp.type="bandpass"; bp.Q.value=6;
+    bp.frequency.setValueAtTime(120,t); bp.frequency.linearRampToValueAtTime(190,t+0.9);
+    const g=this.ctx.createGain(); g.gain.value=0.0;
+    g.gain.linearRampToValueAtTime(0.35,t+0.05); g.gain.setValueAtTime(0.35,t+0.85); g.gain.linearRampToValueAtTime(0,t+1.05);
+    const lfo=this.ctx.createOscillator(); lfo.type="square"; lfo.frequency.value=9;
+    const lfg=this.ctx.createGain(); lfg.gain.value=0.18; lfo.connect(lfg).connect(g.gain);
+    src.connect(bp).connect(g).connect(this.master);
+    this.master.gain.cancelScheduledValues(t); this.master.gain.setValueAtTime(0.0,t); this.master.gain.linearRampToValueAtTime(0.9,t+0.1);
+    src.start(t); lfo.start(t); src.stop(t+1.1); lfo.stop(t+1.1);
+    setTimeout(()=>{ this.startIdle(); if(then) then(); }, 950);
+  }
+  startIdle(){
+    this.ensure();
+    if(this.idleOn) return; this.idleOn=true;
+    const t=this.ctx.currentTime;
+    const bus=this.ctx.createGain(); bus.gain.value=0.0; bus.connect(this.master);
+    const lp=this.ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=420; lp.Q.value=0.7; lp.connect(bus);
+    const base=58, oscs=[];
+    [[1,0.5],[2,0.28],[3,0.16],[0.5,0.22]].forEach(([m,a])=>{
+      const o=this.ctx.createOscillator(); o.type="sawtooth"; o.frequency.value=base*m;
+      o.detune.value=(Math.random()*18-9);
+      const og=this.ctx.createGain(); og.gain.value=a; o.connect(og).connect(lp); o.start(t); oscs.push(o);
+    });
+    const nz=this.ctx.createBufferSource(); nz.buffer=this.noiseBuf(); nz.loop=true;
+    const nf=this.ctx.createBiquadFilter(); nf.type="bandpass"; nf.frequency.value=90; nf.Q.value=2.5;
+    const ng=this.ctx.createGain(); ng.gain.value=0.10; nz.connect(nf).connect(ng).connect(lp); nz.start(t);
+    const lfo=this.ctx.createOscillator(); lfo.type="sine"; lfo.frequency.value=7.5;
+    const lg=this.ctx.createGain(); lg.gain.value=0.16; lfo.connect(lg).connect(bus.gain); lfo.start(t);
+    bus.gain.linearRampToValueAtTime(0.5,t+0.6);
+    this.nodes={bus,lp,oscs,base};
+    this.setMuted(!this.idleWanted);
+  }
+  rev(){
+    if(!this.ctx||!this.nodes) return;
+    const t=this.ctx.currentTime, lp=this.nodes.lp;
+    const mult=[1,2,3,0.5];
+    this.nodes.oscs.forEach((o,i)=>{
+      const f=this.nodes.base*mult[i];
+      o.frequency.cancelScheduledValues(t);
+      o.frequency.setValueAtTime(o.frequency.value,t);
+      o.frequency.linearRampToValueAtTime(f*2.1,t+0.12);
+      o.frequency.exponentialRampToValueAtTime(f,t+0.7);
+    });
+    lp.frequency.cancelScheduledValues(t);
+    lp.frequency.setValueAtTime(lp.frequency.value,t);
+    lp.frequency.linearRampToValueAtTime(1600,t+0.12);
+    lp.frequency.exponentialRampToValueAtTime(420,t+0.7);
+    sweepTach(7.4);
+  }
+  tick(freq=520,dur=0.04,vol=0.12){
+    this.ensure();
+    if(this.ctx.state==='suspended') this.ctx.resume();
+    const t=this.ctx.currentTime, o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type="square"; o.frequency.value=freq; g.gain.value=vol;
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g).connect(this.master); o.start(t); o.stop(t+dur);
+  }
+  setMuted(m){
+    this.idleWanted=!m;
+    if(!this.ctx) return;
+    const t=this.ctx.currentTime;
+    this.master.gain.cancelScheduledValues(t);
+    this.master.gain.linearRampToValueAtTime(m?0.0:0.9,t+0.4);
+  }
+}
+const engine = new Engine();
+
+/* ---------- TACHOMETER ---------- */
+const NEEDLE=document.getElementById('needleGroup');
+const RPMNUM=document.getElementById('rpmNum');
+const MIN_DEG=-120, MAX_DEG=120, MAX_RPM=9;
+(function buildGauge(){
+  const ticks=document.getElementById('ticks');
+  for(let i=0;i<=MAX_RPM;i++){
+    const deg=MIN_DEG+(i/MAX_RPM)*(MAX_DEG-MIN_DEG);
+    const len=12, w=i>=7?2.6:1.6;
+    const col=i>=7?'#bb3a2c':'rgba(236,227,206,.55)';
+    const a=(deg-90)*Math.PI/180;
+    const r1=80,r2=80-len, cx=100,cy=100;
+    const x1=cx+r1*Math.cos(a), y1=cy+r1*Math.sin(a);
+    const x2=cx+r2*Math.cos(a), y2=cy+r2*Math.sin(a);
+    const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+    ln.setAttribute('x1',x1);ln.setAttribute('y1',y1);ln.setAttribute('x2',x2);ln.setAttribute('y2',y2);
+    ln.setAttribute('stroke',col);ln.setAttribute('stroke-width',w);ticks.appendChild(ln);
+  }
+  const arc=document.getElementById('redarc');
+  const p=(v)=>{const deg=MIN_DEG+(v/MAX_RPM)*(MAX_DEG-MIN_DEG);const a=(deg-90)*Math.PI/180;return[100+72*Math.cos(a),100+72*Math.sin(a)];};
+  const a1=p(7),a2=p(9);
+  arc.setAttribute('d',`M ${a1[0]} ${a1[1]} A 72 72 0 0 1 ${a2[0]} ${a2[1]}`);
+})();
+
+let curRpm=0, targetRpm=0, raf=null;
+function setNeedle(rpm){
+  const deg=MIN_DEG+(Math.max(0,Math.min(MAX_RPM,rpm))/MAX_RPM)*(MAX_DEG-MIN_DEG);
+  NEEDLE.setAttribute('transform',`rotate(${deg} 100 100)`);
+  RPMNUM.textContent=rpm.toFixed(1);
+}
+function loop(){
+  curRpm += (targetRpm-curRpm)*0.12;
+  if(Math.abs(targetRpm-curRpm)<0.02) curRpm=targetRpm;
+  setNeedle(curRpm);
+  if(Math.abs(targetRpm-curRpm)>0.005){ raf=requestAnimationFrame(loop); } else { raf=null; }
+}
+function sweepTach(to){
+  targetRpm=to; if(!raf) raf=requestAnimationFrame(loop);
+  if(to>0.9){ clearTimeout(window._idleBack); window._idleBack=setTimeout(()=>sweepTach(0.85),700); }
+}
+function selfTest(){
+  targetRpm=MAX_RPM; if(!raf) raf=requestAnimationFrame(loop);
+  setTimeout(()=>{ targetRpm=0; },900);
+  setTimeout(()=>{ sweepTach(0.85); },1500);
+}
+
+/* ---------- IGNITION / NAV / SOUND ---------- */
+const ignition=document.getElementById('ignition');
+const startBtn=document.getElementById('startBtn');
+const nav=document.getElementById('nav');
+const soundToggle=document.getElementById('soundToggle');
+const soundLabel=document.getElementById('soundLabel');
+
+function enter(){
+  engine.idleWanted=true;
+  engine.crank(()=>{});
+  selfTest();
+  ignition.classList.add('gone');
+  setTimeout(()=>{ ignition.style.display='none'; nav.classList.add('show'); }, 700);
+}
+startBtn.addEventListener('click', enter);
+
+function toggleSound(){
+  const on=soundToggle.classList.toggle('on');
+  engine.setMuted(!on);
+  soundLabel.textContent = on?'IDLE ON':'MUTED';
+  engine.tick(on?660:300,0.05,0.14);
+}
+soundToggle.addEventListener('click', toggleSound);
+soundToggle.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleSound();} });
+
+/* ---------- SPATIAL ---------- */
+const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const tach=document.getElementById('tach');
+if(!reduce){
+  window.addEventListener('pointermove',e=>{
+    const cx=window.innerWidth/2, cy=window.innerHeight/2;
+    const rx=(e.clientY-cy)/cy*-6, ry=(e.clientX-cx)/cx*8;
+    tach.style.transform=`rotateX(${rx}deg) rotateY(${ry}deg)`;
+  });
+}
+document.querySelectorAll('[data-tilt]').forEach(card=>{
+  card.addEventListener('pointermove',e=>{
+    const r=card.getBoundingClientRect();
+    const px=(e.clientX-r.left)/r.width, py=(e.clientY-r.top)/r.height;
+    card.style.setProperty('--mx', (px*100)+'%');
+    card.style.setProperty('--my', (py*100)+'%');
+    if(reduce) return;
+    const rx=(py-0.5)*-5, ry=(px-0.5)*6;
+    card.style.transform=`rotateX(${rx}deg) rotateY(${ry}deg) translateZ(0)`;
+  });
+  card.addEventListener('pointerleave',()=>{ card.style.transform=''; });
+  let revved=false;
+  card.addEventListener('pointerenter',()=>{
+    if(!revved && engine.idleWanted){ engine.rev(); revved=true; setTimeout(()=>revved=false,800); }
+    engine.tick(420,0.05,0.08);
+  });
+});
+document.querySelectorAll('[data-rev], .btn, .startbtn').forEach(el=>{
+  el.addEventListener('pointerenter',()=>engine.tick(720,0.04,0.07));
+});
+
+/* ---------- SCROLL REVEAL ---------- */
+const io=new IntersectionObserver(es=>{
+  es.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target);} });
+},{threshold:0.18});
+document.querySelectorAll('.card').forEach((c,i)=>{ c.style.transitionDelay=(i*0.08)+'s'; io.observe(c); });
+
+window.addEventListener('scroll',()=>{ if(window.scrollY>40 && ignition.classList.contains('gone')) nav.classList.add('show'); });
+</script>
 </body>
 </html>
