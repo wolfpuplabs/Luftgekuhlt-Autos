@@ -602,32 +602,12 @@ document.querySelectorAll('[data-rev], .btn, .startbtn').forEach(el=>{
   el.addEventListener('pointerenter',()=>engine.tick(720,0.04,0.07));
 });
 
-/* ---------- AR LAUNCH (glb only — model-viewer auto-generates USDZ on iOS) ---------- */
-function showTip(frame,msg){
-  let tip=frame.querySelector('.ar-tip');
-  if(!tip){ tip=document.createElement('div'); tip.className='ar-tip'; frame.appendChild(tip); }
-  tip.textContent=msg; requestAnimationFrame(()=>tip.classList.add('show'));
-  clearTimeout(tip._t); tip._t=setTimeout(()=>tip.classList.remove('show'),4200);
-}
+/* ---------- Photo / 3D toggle (AR is wired by the module below) ---------- */
+window.engineTick=(f,d,v)=>{ try{ engine.tick(f,d,v); }catch(e){} };
 document.querySelectorAll('.card .mv-frame').forEach(frame=>{
-  const mv=frame.querySelector('model-viewer');
-  const btn=frame.querySelector('.ar-btn');
-  btn.addEventListener('click', async ()=>{
-    engine.tick(880,0.06,0.12);
-    try{
-      // iOS/iPadOS: builds a USDZ from the glb and opens Quick Look.
-      // Android: opens Scene Viewer / WebXR. No separate .usdz file needed.
-      await mv.activateAR();
-    }catch(err){
-      showTip(frame,'AR needs a phone or tablet — on iPhone/iPad use Safari, on Android use Chrome.');
-    }
-  });
-
-  // ----- Photo / 3D toggle -----
   frame.querySelectorAll('.mtab').forEach(tab=>{
     tab.addEventListener('click',()=>{
-      const mode=tab.dataset.mode;
-      frame.setAttribute('data-mode', mode);
+      frame.setAttribute('data-mode', tab.dataset.mode);
       frame.querySelectorAll('.mtab').forEach(t=>t.classList.toggle('active', t===tab));
       engine.tick(560,0.04,0.07);
     });
@@ -641,6 +621,116 @@ const io=new IntersectionObserver(es=>{
 document.querySelectorAll('.card').forEach((c,i)=>{ c.style.transitionDelay=(i*0.08)+'s'; io.observe(c); });
 
 window.addEventListener('scroll',()=>{ if(window.scrollY>40 && ignition.classList.contains('gone')) nav.classList.add('show'); });
+</script>
+
+<!-- three.js for in-browser glb -> usdz conversion (loaded only on iOS, on demand) -->
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+/* ===== HOLOVIEW-style AR: convert glb -> usdz in the browser, serve via service worker =====
+   iOS/iPadOS (Safari AND Chrome): Quick Look needs a .usdz at a real URL. We build it
+   on-device and let the service worker serve it from /ar-cache/. No .usdz hosting needed.
+   Android: model-viewer activateAR() (Scene Viewer / WebXR). */
+const isApple = /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (/Mac/.test(navigator.platform||navigator.userAgent||'') && navigator.maxTouchPoints > 1);
+const tick=(f,d,v)=>{ try{ window.engineTick && window.engineTick(f,d,v); }catch(e){} };
+function showTip(frame,msg){
+  let tip=frame.querySelector('.ar-tip');
+  if(!tip){ tip=document.createElement('div'); tip.className='ar-tip'; frame.appendChild(tip); }
+  tip.textContent=msg; requestAnimationFrame(()=>tip.classList.add('show'));
+  clearTimeout(tip._t); tip._t=setTimeout(()=>tip.classList.remove('show'),5200);
+}
+
+async function swReady(){
+  if(!('serviceWorker' in navigator)) return false;
+  try{
+    await navigator.serviceWorker.register('./sw.js');
+    await navigator.serviceWorker.ready;
+    let t=0; while(!navigator.serviceWorker.controller && t++<60){ await new Promise(r=>setTimeout(r,100)); }
+    return !!navigator.serviceWorker.controller;
+  }catch(e){ return false; }
+}
+
+let _three=null;
+async function three(){
+  if(_three) return _three;
+  const THREE=await import('three');
+  const { GLTFLoader }=await import('three/addons/loaders/GLTFLoader.js');
+  const { USDZExporter }=await import('three/addons/exporters/USDZExporter.js');
+  return _three={ THREE, GLTFLoader, USDZExporter };
+}
+async function buildUsdz(glbUrl, id){
+  const { GLTFLoader, USDZExporter }=await three();
+  const gltf=await new GLTFLoader().loadAsync(glbUrl);
+  const exporter=new USDZExporter();
+  const data = exporter.parseAsync ? await exporter.parseAsync(gltf.scene)
+                                   : await exporter.parse(gltf.scene);
+  const blob=new Blob([data],{ type:'model/vnd.usdz+zip' });
+  const cache=await caches.open('holo-ar');
+  const path='/ar-cache/'+id+'.usdz';
+  await cache.put(path, new Response(blob,{ headers:{ 'Content-Type':'model/vnd.usdz+zip' } }));
+  return path;
+}
+
+function fallbackToActivateAR(ctrl, frame, mv){
+  ctrl.removeAttribute('href');
+  ctrl.style.opacity=''; ctrl.style.pointerEvents='';
+  ctrl.addEventListener('click', async e=>{
+    if(e.preventDefault) e.preventDefault();
+    tick(880,0.06,0.12);
+    try{ await mv.activateAR(); }
+    catch(err){ showTip(frame,'AR couldn’t start here — try Safari on this device.'); }
+  });
+}
+
+(async ()=>{
+  const frames=[...document.querySelectorAll('.card .mv-frame')];
+  if(!isApple){
+    frames.forEach(frame=>{
+      const mv=frame.querySelector('model-viewer');
+      frame.querySelector('.ar-btn').addEventListener('click', async ()=>{
+        tick(880,0.06,0.12);
+        try{ await mv.activateAR(); }
+        catch(err){ showTip(frame,'AR works on a phone/tablet — Android Chrome or iPhone/iPad.'); }
+      });
+    });
+    return;
+  }
+
+  const sw = await swReady();
+  for(let i=0;i<frames.length;i++){
+    const frame=frames[i];
+    const mv=frame.querySelector('model-viewer');
+    const btn=frame.querySelector('.ar-btn');
+    const glb=mv.getAttribute('src');
+    const id='car'+i;
+
+    // swap the button for a REAL <a rel="ar"> (a genuine tap is the most reliable trigger)
+    const a=document.createElement('a');
+    a.className=btn.className; a.setAttribute('rel','ar');
+    a.innerHTML='<img alt="" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">'+btn.innerHTML;
+    a.style.opacity='.55'; a.style.pointerEvents='none';   // disabled until its USDZ is ready
+    btn.replaceWith(a);
+    a.addEventListener('click', ()=>tick(880,0.06,0.12));
+
+    if(sw){
+      try{
+        const url=await buildUsdz(glb, id);   // sequential: one conversion at a time
+        a.setAttribute('href', url);
+        a.style.opacity=''; a.style.pointerEvents='';
+      }catch(err){
+        console.warn('USDZ build failed for', glb, err);
+        fallbackToActivateAR(a, frame, mv);   // last resort (Safari auto-gen)
+      }
+    }else{
+      fallbackToActivateAR(a, frame, mv);
+    }
+  }
+})();
 </script>
 </body>
 </html>
