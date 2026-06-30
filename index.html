@@ -628,6 +628,14 @@ document.querySelectorAll('.card .mv-frame').forEach(frame=>{
   const mv=frame.querySelector('model-viewer');
   const btn=frame.querySelector('.ar-btn');
   const usdz=frame.getAttribute('data-usdz');
+  // preflight: confirm the .usdz is actually deployed, so a missing file
+  // shows a friendly message instead of a raw 404 page. Optimistic by default.
+  frame._usdzOk = undefined;
+  if(isApple && usdz){
+    fetch(usdz,{method:'HEAD'})
+      .then(r=>{ frame._usdzOk = r.ok; })
+      .catch(()=>{ frame._usdzOk = false; });
+  }
   const supported=()=> mv.canActivateAR || isApple;
   const refresh=()=>btn.classList.toggle('unsupported', !supported());
   mv.addEventListener('load', refresh);
@@ -639,7 +647,14 @@ document.querySelectorAll('.card .mv-frame').forEach(frame=>{
     if(mv.canActivateAR){
       try{ await mv.activateAR(); return; }catch(err){}
     }
-    if(isApple){ quickLook(usdz); return; }   // iPhone / iPad Quick Look
+    if(isApple){
+      if(frame._usdzOk===false){
+        showTip(frame,'AR model isn’t deployed yet. Upload the .usdz files to the site, then try again.');
+      }else{
+        quickLook(usdz);   // iPhone / iPad Quick Look
+      }
+      return;
+    }
     showTip(frame, coarse
       ? 'AR isn’t available in this browser. Try Chrome on Android or Safari on iOS.'
       : 'Open this page on your phone, then tap View in AR to place the car in your room.');
